@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-# Import routers
-from app.controllers import router as api_router
-from app.index_controllers import index_router as in_ro
+# Import routers - FIXED IMPORT NAMES
+from app.controllers import api_router
+from app.index_controllers import index_router
 
 import pickle
 import uvicorn
@@ -18,7 +18,11 @@ app = FastAPI(
 )
 
 # Mount static files and templates
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+try:
+    app.mount("/static", StaticFiles(directory="frontend"), name="static")
+except:
+    pass  # In case frontend directory doesn't exist yet
+
 templates = Jinja2Templates(directory="templates")
 
 # Global model variable
@@ -28,15 +32,16 @@ model = None
 def load_model():
     global model
     try:
-        with open("model/best_stroke_model.pkl", "rb") as f:
+        with open("C:/Users/Lenovo/Downloads/stroke_prediction/model/best_stroke_model.pkl", "rb") as f:
             model = pickle.load(f)
         print("✅ Stroke Prediction Model loaded successfully!")
     except Exception as e:
-        print("❌ Error loading the model:", e)
+        print(f"❌ Error loading the model: {e}")
+        print("🔧 Train the model first using: python train_model.py")
 
-# Include routers
+# Include routers - FIXED NAMES
 app.include_router(api_router)
-app.include_router(in_ro)
+app.include_router(index_router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8002, reload=True)

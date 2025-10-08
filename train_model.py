@@ -11,7 +11,7 @@ import json
 
 def load_and_preprocess_data():
     # Load the dataset
-    df = pd.read_csv('data/healthcare-dataset-stroke-data.csv')
+    df = pd.read_csv('C:/Users/Lenovo/Downloads/stroke_prediction/data/healthcare-dataset-stroke-data.csv')
     
     # Handle missing BMI values
     df['bmi'] = pd.to_numeric(df['bmi'], errors='coerce')

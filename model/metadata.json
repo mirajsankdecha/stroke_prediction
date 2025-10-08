@@ -1,0 +1,19 @@
+{
+  "features": [
+    "id",
+    "gender",
+    "age",
+    "hypertension",
+    "heart_disease",
+    "ever_married",
+    "work_type",
+    "Residence_type",
+    "avg_glucose_level",
+    "bmi",
+    "smoking_status"
+  ],
+  "model_type": "RandomForestClassifier",
+  "training_date": "2025-10-09T00:04:14.815154",
+  "dataset_size": 5110,
+  "stroke_cases": 249
+}

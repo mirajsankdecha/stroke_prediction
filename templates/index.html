@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>🧠 Stroke Risk Predictor - AI Healthcare</title>
+
+    <!-- Bootstrap & Fonts -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --secondary: #06b6d4;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg-main: #f8fafc;
+        --bg-card: rgba(255, 255, 255, 0.95);
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border: rgba(148, 163, 184, 0.2);
+        --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: var(--text-primary);
+      }
+
+      /* Animated background */
+      .bg-animated {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow: hidden;
+      }
+
+      .bg-animated::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="75" cy="75" r="1.5" fill="rgba(255,255,255,0.02)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.4;
+      }
+
+      .site {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Header */
+      .app-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        color: white;
+      }
+
+      .logo-container {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .logo-container:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .main-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        font-weight: 400;
+      }
+
+      /* Main card */
+      .main-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 0;
+        min-height: 600px;
+      }
+
+      @media (max-width: 992px) {
+        .main-card {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Form section */
+      .form-section {
+        padding: 2.5rem;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+      }
+
+      .form-control,
+      .form-select {
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+        background: white;
+      }
+
+      .btn-predict {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        border: none;
+        border-radius: 16px;
+        padding: 1rem 2rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: white;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-predict:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px rgba(37, 99, 235, 0.3);
+      }
+
+      .btn-predict:active {
+        transform: translateY(0);
+      }
+
+      /* Results section */
+      .results-section {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        position: relative;
+      }
+
+      .hero-images {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        width: 100%;
+        margin-bottom: 2rem;
+      }
+
+      .hero-img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .hero-img:hover {
+        transform: scale(1.05);
+      }
+
+      .result-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 320px;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .result-card.show {
+        animation: slideUp 0.5s ease forwards;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .result-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      .result-text, .result-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      .result-description {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+
+      .probability-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 1rem 0;
+      }
+
+      .probability-fill {
+        height: 100%;
+        width: 0%;
+        transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 4px;
+      }
+
+      /* Confidence meter styles */
+      .confidence-meter {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        border-left: 4px solid var(--primary);
+      }
+
+      .confidence-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+      }
+
+      .confidence-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .risk-low {
+        color: var(--success);
+      }
+      .risk-medium {
+        color: var(--warning);
+      }
+      .risk-high {
+        color: var(--danger);
+      }
+
+      .bg-low {
+        background: linear-gradient(90deg, var(--success), #34d399);
+      }
+      .bg-medium {
+        background: linear-gradient(90deg, var(--warning), #fbbf24);
+      }
+      .bg-high {
+        background: linear-gradient(90deg, var(--danger), #f87171);
+      }
+
+      /* Medical caution box */
+      .caution-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 2px solid #f59e0b;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+      }
+
+      .caution-title {
+        font-weight: 700;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .caution-text {
+        color: #92400e;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 0;
+      }
+
+      /* FIXED: Loading animation */
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Floating elements */
+      .floating-element {
+        position: absolute;
+        opacity: 0.1;
+        animation: float 6s ease-in-out infinite;
+      }
+
+      .floating-element:nth-child(1) {
+        top: 10%;
+        left: 10%;
+        animation-delay: 0s;
+      }
+      .floating-element:nth-child(2) {
+        top: 20%;
+        right: 10%;
+        animation-delay: 2s;
+      }
+      .floating-element:nth-child(3) {
+        bottom: 20%;
+        left: 15%;
+        animation-delay: 4s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      .footer-text {
+        text-align: center;
+        margin-top: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+      }
+
+      /* Creator credit styling */
+      .creator-credit {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      /* Pulse animation for important elements */
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bg-animated"></div>
+
+    <!-- Floating medical icons -->
+    <div class="floating-element">
+      <i class="fas fa-heartbeat" style="font-size: 3rem; color: white"></i>
+    </div>
+    <div class="floating-element">
+      <i class="fas fa-brain" style="font-size: 2.5rem; color: white"></i>
+    </div>
+    <div class="floating-element">
+      <i class="fas fa-user-md" style="font-size: 3.5rem; color: white"></i>
+    </div>
+
+    <div class="site">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="logo-container pulse">
+          <i class="fas fa-brain" style="font-size: 2.5rem; color: white"></i>
+        </div>
+        <h1 class="main-title">🧠 AI Stroke Risk Predictor</h1>
+        <p class="subtitle">
+          Advanced Machine Learning for Healthcare Screening
+        </p>
+      </header>
+
+      <!-- Medical Caution Box -->
+      <div class="caution-box">
+        <div class="caution-title">
+          <i class="fas fa-exclamation-triangle"></i>
+          ⚠️ IMPORTANT MEDICAL DISCLAIMER
+        </div>
+        <p class="caution-text">
+          <strong
+            >This AI tool is for educational purposes only and should NOT
+            replace professional medical advice.</strong
+          >
+          Always consult qualified healthcare professionals for medical
+          decisions. This prediction model may have limitations and should not
+          be used for emergency situations. If you experience stroke symptoms
+          (sudden numbness, confusion, trouble speaking, severe headache), seek
+          immediate medical attention by calling emergency services.
+        </p>
+      </div>
+
+      <!-- Main Content -->
+      <main class="main-card">
+        <!-- Form Section -->
+        <section class="form-section">
+          <h2 class="section-title">
+            <i class="fas fa-clipboard-list text-primary"></i>
+            Patient Information
+          </h2>
+
+          <form id="predictionForm" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-venus-mars me-1"></i> Gender
+              </label>
+              <select class="form-select" name="gender" required>
+                <option value="">Choose gender</option>
+                <option value="Male">👨 Male</option>
+                <option value="Female">👩 Female</option>
+                <option value="Other">⚧ Other</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-birthday-cake me-1"></i> Age
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                name="age"
+                min="1"
+                max="120"
+                step="0.1"
+                placeholder="Enter age"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-tachometer-alt me-1"></i> Hypertension
+              </label>
+              <select class="form-select" name="hypertension" required>
+                <option value="">Select option</option>
+                <option value="0">❌ No</option>
+                <option value="1">✅ Yes</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-heartbeat me-1"></i> Heart Disease
+              </label>
+              <select class="form-select" name="heart_disease" required>
+                <option value="">Select option</option>
+                <option value="0">❌ No</option>
+                <option value="1">✅ Yes</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-ring me-1"></i> Ever Married
+              </label>
+              <select class="form-select" name="ever_married" required>
+                <option value="">Select option</option>
+                <option value="Yes">💍 Yes</option>
+                <option value="No">🚫 No</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-briefcase me-1"></i> Work Type
+              </label>
+              <select class="form-select" name="work_type" required>
+                <option value="">Select work type</option>
+                <option value="Private">🏢 Private</option>
+                <option value="Self-employed">👨‍💼 Self-employed</option>
+                <option value="Govt_job">🏛️ Government Job</option>
+                <option value="children">👶 Children</option>
+                <option value="Never_worked">🚫 Never Worked</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-city me-1"></i> Residence Type
+              </label>
+              <select class="form-select" name="Residence_type" required>
+                <option value="">Select residence</option>
+                <option value="Urban">🏙️ Urban</option>
+                <option value="Rural">🌾 Rural</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-vial me-1"></i> Glucose Level (mg/dL)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                name="avg_glucose_level"
+                min="50"
+                max="300"
+                step="0.01"
+                placeholder="Normal: 80-120"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-weight me-1"></i> BMI (optional)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                name="bmi"
+                min="10"
+                max="60"
+                step="0.1"
+                placeholder="Body Mass Index"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-smoking me-1"></i> Smoking Status
+              </label>
+              <select class="form-select" name="smoking_status" required>
+                <option value="">Select status</option>
+                <option value="never smoked">🚭 Never Smoked</option>
+                <option value="formerly smoked">🚬 Formerly Smoked</option>
+                <option value="smokes">🔥 Currently Smokes</option>
+                <option value="Unknown">❓ Unknown</option>
+              </select>
+            </div>
+
+            <div class="col-12 mt-4">
+              <button
+                class="btn btn-predict w-100"
+                type="submit"
+                id="predictBtn"
+              >
+                <i class="fas fa-search me-2"></i>
+                Analyze Stroke Risk
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Results Section -->
+        <aside class="results-section">
+          <div class="hero-images">
+            <img
+              class="hero-img"
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToZhnv5ZkIyj6AklmGfp1iqnEXbvuhaQ79EgbxVZpG2YJZCyIWbK9qrQZe_kqX2x84urI&usqp=CAU"
+              alt="Brain MRI Scan"
+            />
+            <img
+              class="hero-img"
+              src="https://www.cdc.gov/stroke/media/images/2024/10/Signs-Symptoms-Stroke.jpg"
+              alt="Medical Equipment"
+            />
+          </div>
+
+          <div class="hero-images">
+            <img
+              class="hero-img"
+              src="https://media.post.rvohealth.io/wp-content/uploads/sites/3/2023/04/brain-mris-Recurrent-strokes-732x549-thumbnail-732x549.jpg"
+              alt="Healthcare Professional"
+            />
+            <img
+              class="hero-img"
+              src="https://www.ohsu.edu/sites/default/files/2019-06/GettyImages-172591890.jpg"
+              alt="Medical Technology"
+            />
+          </div>
+
+          <div class="result-card" id="resultCard">
+            <div class="result-icon">🏥</div>
+            <div class="result-text">Ready for Analysis</div>
+            <p class="result-description">
+              Fill in the patient information and click "Analyze" to get
+              AI-powered stroke risk assessment with confidence metrics.
+            </p>
+          </div>
+        </aside>
+      </main>
+
+      <!-- Footer -->
+      <p class="footer-text">
+        🛡️ Powered by Advanced Machine Learning • Built with ❤️ for Healthcare
+      </p>
+      <div class="text-center">
+        <a
+          href="https://github.com/mirajsankdecha"
+          target="_blank"
+          style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          "
+          onmouseover="this.style.background='rgba(255,255,255,0.35)'; this.style.transform='scale(1.05)';"
+          onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='scale(1)';"
+        >
+          <i class="fas fa-code" style="color: #00b4d8; font-size: 18px"></i>
+          <span style="color: #ffffff"
+            >Created by <strong>Miraj Sankdecha</strong></span
+          >
+          <i class="fas fa-star" style="color: #ffcc00; font-size: 18px"></i>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("predictionForm");
+      const resultCard = document.getElementById("resultCard");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        console.log("Form submitted!"); // Debug
+        
+        // Show loading state
+        resultCard.innerHTML = `
+          <div class="result-icon">
+            <div class="loading-spinner"></div>
+          </div>
+          <div class="result-title">Analyzing...</div>
+          <div class="result-description">
+            AI is processing patient data and calculating stroke risk probability...
+          </div>
+        `;
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        console.log("Raw form data:", data); // Debug
+
+        // Convert numeric fields - KEEP STRING VALUES FOR CATEGORICAL
+        if (data.age) data.age = parseFloat(data.age);
+        if (data.hypertension) data.hypertension = parseInt(data.hypertension);
+        if (data.heart_disease) data.heart_disease = parseInt(data.heart_disease);
+        if (data.avg_glucose_level) data.avg_glucose_level = parseFloat(data.avg_glucose_level);
+        if (data.bmi) data.bmi = parseFloat(data.bmi);
+
+        console.log("Processed data:", data); // Debug
+
+        try {
+          console.log("Making API request..."); // Debug
+          
+          const response = await fetch("/api/predict", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(data),
+          });
+
+          console.log("Response received:", response); // Debug
+          console.log("Response status:", response.status); // Debug
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Response error:", errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+
+          const result = await response.json();
+          console.log("Parsed result:", result); // Debug
+          
+          setTimeout(() => {
+            showResult(result);
+          }, 1500);
+
+        } catch (err) {
+          console.error("Fetch error:", err); // Debug
+          setTimeout(() => {
+            showError(`❌ Error: ${err.message}`);
+          }, 1500);
+        }
+      });
+
+      function showResult(result) {
+        console.log("showResult called with:", result); // Debug
+        
+        try {
+          const probability = (result.stroke_probability * 100).toFixed(1);
+          const riskLevel = result.risk_level.toLowerCase();
+          
+          const icons = {
+            'low': '✅',
+            'medium': '⚠️',
+            'high': '🚨'
+          };
+          
+          const colors = {
+            'low': 'var(--success)',
+            'medium': 'var(--warning)',
+            'high': 'var(--danger)'
+          };
+
+          resultCard.innerHTML = `
+            <div class="result-icon risk-${riskLevel}" style="color: ${colors[riskLevel]};">
+              ${icons[riskLevel] || '📊'}
+            </div>
+            <div class="result-title risk-${riskLevel}" style="color: ${colors[riskLevel]};">
+              ${result.risk_level} Stroke Risk
+            </div>
+            <div class="result-description">
+              <strong>Prediction:</strong> ${result.stroke_prediction === 1 ? 'High Risk' : 'Low Risk'}<br>
+              <strong>Probability:</strong> ${probability}%<br>
+              <strong>Message:</strong> ${result.message}
+            </div>
+            
+            <div class="confidence-meter">
+              <div class="confidence-label">Model Confidence:</div>
+              <div class="confidence-value">${result.confidence.toFixed(1)}%</div>
+            </div>
+          `;
+          
+          resultCard.classList.add('show');
+          console.log("Result displayed successfully!"); // Debug
+          
+        } catch (error) {
+          console.error("Error in showResult:", error); // Debug
+          resultCard.innerHTML = `
+            <div class="result-icon" style="color: red;">❌</div>
+            <div class="result-title" style="color: red;">Display Error</div>
+            <div class="result-description">Error displaying result: ${error.message}</div>
+          `;
+        }
+      }
+
+      function showError(message) {
+        console.log("showError called with:", message); // Debug
+        
+        resultCard.innerHTML = `
+          <div class="result-icon" style="color: red;">❌</div>
+          <div class="result-title" style="color: red;">Analysis Failed</div>
+          <div class="result-description">${message}</div>
+        `;
+        resultCard.classList.add('show');
+      }
+    </script>
+  </body>
+</html>

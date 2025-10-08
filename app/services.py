@@ -11,7 +11,7 @@ class StrokeModelService:
 
     def load_model(self):
         try:
-            model_path = Path("model/best_stroke_model.pkl")
+            model_path = Path("C:/Users/Lenovo/Downloads/stroke_prediction/model/best_stroke_model.pkl")
             with open(model_path, "rb") as f:
                 self.model = pickle.load(f)
         except Exception as e:

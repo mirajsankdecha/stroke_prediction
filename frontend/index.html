@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroke Risk Predictor</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .low-risk { background: #d4edda; border: 1px solid #c3e6cb; }
+        .medium-risk { background: #fff3cd; border: 1px solid #ffeaa7; }
+        .high-risk { background: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🏥 Stroke Risk Predictor</h1>
+    <p>Enter patient information to predict stroke risk</p>
+    
+    <form id="predictionForm">
+        <div class="form-group">
+            <label>Gender:</label>
+            <select name="gender" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Age:</label>
+            <input type="number" name="age" min="1" max="120" step="0.1" required>
+        </div>
+
+        <div class="form-group">
+            <label>Hypertension:</label>
+            <select name="hypertension" required>
+                <option value="">Select</option>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Heart Disease:</label>
+            <select name="heart_disease" required>
+                <option value="">Select</option>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Ever Married:</label>
+            <select name="ever_married" required>
+                <option value="">Select</option>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Work Type:</label>
+            <select name="work_type" required>
+                <option value="">Select Work Type</option>
+                <option value="Private">Private</option>
+                <option value="Self-employed">Self-employed</option>
+                <option value="Govt_job">Government Job</option>
+                <option value="children">Children</option>
+                <option value="Never_worked">Never Worked</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Residence Type:</label>
+            <select name="Residence_type" required>
+                <option value="">Select</option>
+                <option value="Urban">Urban</option>
+                <option value="Rural">Rural</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Average Glucose Level:</label>
+            <input type="number" name="avg_glucose_level" min="50" max="300" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label>BMI (optional):</label>
+            <input type="number" name="bmi" min="10" max="60" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label>Smoking Status:</label>
+            <select name="smoking_status" required>
+                <option value="">Select</option>
+                <option value="never smoked">Never Smoked</option>
+                <option value="formerly smoked">Formerly Smoked</option>
+                <option value="smokes">Currently Smokes</option>
+                <option value="Unknown">Unknown</option>
+            </select>
+        </div>
+
+        <button type="submit">🔍 Predict Stroke Risk</button>
+    </form>
+
+    <div id="result" style="display: none;"></div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert numeric fields
+            data.age = parseFloat(data.age);
+            data.hypertension = parseInt(data.hypertension);
+            data.heart_disease = parseInt(data.heart_disease);
+            data.avg_glucose_level = parseFloat(data.avg_glucose_level);
+            if (data.bmi) data.bmi = parseFloat(data.bmi);
+            
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayResult(result);
+                } else {
+                    displayError(result.detail || 'Prediction failed');
+                }
+            } catch (error) {
+                displayError('Network error: ' + error.message);
+            }
+        });
+
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            const riskClass = result.risk_level.toLowerCase() + '-risk';
+            const percentage = (result.stroke_probability * 100).toFixed(1);
+            
+            resultDiv.innerHTML = `
+                <h3>Prediction Result</h3>
+                <p><strong>Stroke Risk:</strong> ${result.stroke_prediction ? 'HIGH RISK' : 'LOW RISK'}</p>
+                <p><strong>Probability:</strong> ${percentage}%</p>
+                <p><strong>Risk Level:</strong> ${result.risk_level}</p>
+            `;
+            resultDiv.className = `result ${riskClass}`;
+            resultDiv.style.display = 'block';
+        }
+
+        function displayError(error) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<h3>Error</h3><p>${error}</p>`;
+            resultDiv.className = 'result';
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

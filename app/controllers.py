@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 from typing import Optional
 import logging
+import os
 
 # Initialize router
 api_router = APIRouter(prefix="/api", tags=["Stroke Prediction"])
@@ -13,14 +14,36 @@ api_router = APIRouter(prefix="/api", tags=["Stroke Prediction"])
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def load_model():
+    """Load the ML model with multiple fallback paths for Render deployment"""
+    model_paths = [
+        # Production paths (for Render)
+        "model/best_stroke_model.pkl",
+        "./model/best_stroke_model.pkl",
+        "best_stroke_model.pkl",
+        # Local development path
+        "C:/Users/Lenovo/Downloads/stroke_prediction/model/best_stroke_model.pkl",
+        # Alternative paths
+        "/opt/render/project/src/model/best_stroke_model.pkl",
+        "./stroke_prediction/model/best_stroke_model.pkl"
+    ]
+    
+    for path in model_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    model = pickle.load(f)
+                logger.info(f"✅ Model loaded successfully from: {path}")
+                return model
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to load model from {path}: {e}")
+            continue
+    
+    logger.error("❌ Failed to load model from any path")
+    return None
+
 # Load model globally
-try:
-    with open("C:/Users/Lenovo/Downloads/stroke_prediction/model/best_stroke_model.pkl", "rb") as f:
-        model = pickle.load(f)
-    logger.info("Model loaded successfully!")
-except Exception as e:
-    logger.error(f"Failed to load model: {e}")
-    model = None
+model = load_model()
 
 # Input schema matching your frontend form
 class StrokeInput(BaseModel):
@@ -46,7 +69,7 @@ class StrokePredictionResponse(BaseModel):
 def encode_categorical_data(data: StrokeInput):
     """
     Convert categorical string data to numerical format for model prediction
-    FIXED: Now returns exactly 11 features as expected by the model
+    Returns exactly 11 features as expected by the model
     """
     try:
         # Gender encoding (Male=1, Female=0, Other=2)
@@ -83,9 +106,7 @@ def encode_categorical_data(data: StrokeInput):
         # Handle missing BMI - use dataset median
         bmi_value = data.bmi if data.bmi is not None else 28.1
         
-        # CRITICAL FIX: Create 11 features by adding an additional calculated feature
-        # This could be BMI category, age group, or other derived feature
-        # Let's add BMI category as the 11th feature (0=underweight, 1=normal, 2=overweight, 3=obese)
+        # BMI category as 11th feature (0=underweight, 1=normal, 2=overweight, 3=obese)
         if bmi_value < 18.5:
             bmi_category = 0  # underweight
         elif bmi_value < 25:
@@ -107,35 +128,36 @@ def encode_categorical_data(data: StrokeInput):
             data.avg_glucose_level, # 8. avg_glucose_level
             bmi_value,             # 9. bmi
             smoking_encoded,       # 10. smoking_status
-            bmi_category           # 11. bmi_category (NEW - this makes it 11 features)
+            bmi_category           # 11. bmi_category
         ]
         
-        logger.info(f"Encoded features (count: {len(features)}): {features}")
+        logger.info(f"🔢 Encoded features (count: {len(features)}): {features}")
         return features
         
     except Exception as e:
-        logger.error(f"Error encoding data: {e}")
+        logger.error(f"❌ Error encoding data: {e}")
         raise HTTPException(status_code=400, detail=f"Data encoding error: {str(e)}")
 
 @api_router.post("/predict", response_model=StrokePredictionResponse)
 def predict_stroke(data: StrokeInput):
-    """
-    Predict stroke probability based on patient data
-    """
+    """Predict stroke probability based on patient data"""
     try:
         if model is None:
-            raise HTTPException(status_code=500, detail="Model not loaded")
+            raise HTTPException(
+                status_code=503, 
+                detail="ML Model not available. Please check model file exists."
+            )
         
-        logger.info(f"Received prediction request: {data.dict()}")
+        logger.info(f"📥 Received prediction request: {data.dict()}")
         
         # Encode categorical data to numerical format
         features_list = encode_categorical_data(data)
         
-        # Convert to numpy array with correct shape for model (1 sample, 11 features)
+        # Convert to numpy array with correct shape for model
         features = np.array([features_list])
         
-        logger.info(f"Model input shape: {features.shape}")
-        logger.info(f"Model input: {features}")
+        logger.info(f"📊 Model input shape: {features.shape}")
+        logger.info(f"🎯 Model input: {features}")
         
         # Make prediction
         prediction = model.predict(features)[0]
@@ -145,7 +167,9 @@ def predict_stroke(data: StrokeInput):
             probability = model.predict_proba(features)[0]
             stroke_probability = float(probability[1]) if len(probability) > 1 else float(probability[0])
             confidence_percentage = max(probability) * 100
-        except:
+            logger.info(f"📈 Prediction probabilities: {probability}")
+        except Exception as prob_error:
+            logger.warning(f"⚠️ predict_proba failed: {prob_error}")
             # Fallback for models without predict_proba
             stroke_probability = float(prediction)
             confidence_percentage = 85.0 if prediction == 1 else 92.0
@@ -172,27 +196,59 @@ def predict_stroke(data: StrokeInput):
             message=message
         )
         
-        logger.info(f"Prediction response: {response.dict()}")
-        
+        logger.info(f"✅ Prediction response: {response.dict()}")
         return response
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Prediction error: {e}")
+        logger.error(f"💥 Prediction error: {e}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 @api_router.get("/health")
-def health_check():
-    """Health check endpoint"""
+def api_health_check():
+    """API Health check endpoint for monitoring"""
+    model_status = "loaded" if model is not None else "not_loaded"
     return {
-        "status": "healthy",
+        "api_status": "healthy",
+        "model_status": model_status,
         "model_loaded": model is not None,
         "expected_features": 11,
-        "feature_list": [
+        "feature_names": [
             "gender", "age", "hypertension", "heart_disease", 
             "ever_married", "work_type", "Residence_type", 
             "avg_glucose_level", "bmi", "smoking_status", "bmi_category"
         ],
-        "message": "Stroke Prediction API is running"
+        "message": f"Stroke Prediction API is running on Render - Model: {model_status}",
+        "environment": "production"
     }
+
+@api_router.get("/model-info")
+def get_model_info():
+    """Get detailed model information"""
+    try:
+        model_type = type(model).__name__ if model else "Not loaded"
+        return {
+            "model_type": model_type,
+            "model_loaded": model is not None,
+            "input_features": 11,
+            "categorical_encodings": {
+                "gender": {"Male": 1, "Female": 0, "Other": 2},
+                "ever_married": {"Yes": 1, "No": 0},
+                "work_type": {
+                    "Private": 0, "Self-employed": 1, "Govt_job": 2,
+                    "children": 3, "Never_worked": 4
+                },
+                "Residence_type": {"Urban": 1, "Rural": 0},
+                "smoking_status": {
+                    "never smoked": 0, "formerly smoked": 1, 
+                    "smokes": 2, "Unknown": 3
+                },
+                "bmi_category": {
+                    "underweight": 0, "normal": 1, 
+                    "overweight": 2, "obese": 3
+                }
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

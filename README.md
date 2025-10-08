@@ -95,13 +95,13 @@ This AI-driven healthcare application aims to revolutionize stroke risk assessme
 ### :man_technologist: Developer Information
 
 - **Developer:** Miraj Sankdecha
-- **Portfolio:** [mirajsankdecha.vercel.app](https://mirajsankdecha.vercel.app)
-- **University:** [Your University Name]
+- **Portfolio:** [mirajsankdecha.vercel.app](https://mirajsankdecha.dev)
+- **University:** Narayana Business School
 - **Specialization:** Machine Learning & Full-Stack Development
 
 ### :phone: Contact Information
 
-- **Email:** [sankdechamiraj@gmail.com](mailto:sankdechamiraj@gmail.com)
+- **Email:** [mirajsankdecha@gmail.com](mailto:mirajsankdecha@gmail.com)
 - **LinkedIn:** [https://www.linkedin.com/in/mirajsankdecha/](https://www.linkedin.com/in/mirajsankdecha/)
 - **Twitter:** [https://x.com/mirajsankdecha](https://x.com/mirajsankdecha)
 - **GitHub:** [https://github.com/mirajsankdecha](https://github.com/mirajsankdecha)
